@@ -1027,23 +1027,30 @@ function orResetFilters() {
   orSearchCard(document.getElementById('or-new-name').value);
 }
 
+// ── 靜態中文對照表（繁體/簡體/日文 → 英文）─────────────
+const ZH_MAP = {"灰流幽鬼":"Ash Blossom & Joyous Spring","增殖的G":'Maxx "C"',"無限泡影":"Infinite Impermanence","原始生命態尼比魯":"Nibiru, the Primal Being","效果無效":"Effect Veiler","幻創的騎諾修伊":"Ghost Belle & Haunted Mansion","怪獸奪取":"Ghost Ogre & Snow Rabbit","幻貌王幽靈騎士":"Ghost Reaper & Winter Cherries","D.D.烏鴉":"D.D. Crow","PSY骷髏駕駛員":"PSY-Framegear Gamma","PSY骷髏引擎":"PSY-Frame Driver","幻影騎士團破爛外套":"The Phantom Knights of Ragged Gloves","墓穴的指名者":"Called by the Grave","抹殺的指名者":"Crossout Designator","蛇眼艾克塞爾":"Snake-Eye Ash","原罪寶-蛇眼":"Original Sinful Spoils - Snake-Eye","蛇眼的炎魔":"Snake-Eyes Flamberge Dragon","黑女巫黛亞柏爾斯塔":"Diabellstar the Black Witch","炎之蛇眼":"Snake-Eye Flamberge Dragon","蛇眼融合":"Snake-Eyes Poplar","天盃龍白龍":"Tenpai Dragon Paidra","天盃龍赤龍":"Tenpai Dragon Chundra","天盃龍黃龍":"Tenpai Dragon Genryu","炎洗禮":"Flame Purification","捕食植物奧菲斯":"Predaplant Verte Anaconda","捕食植物蜘蛛蘭":"Predaplant Chimerafflesia","燃烽牛犬":"Salamangreat Gazelle","燃烽獅子":"Salamangreat Sunlight Wolf","燃烽轉生":"Salamangreat Rage","燃烽吼聲":"Salamangreat Roar","燃烽的幸運貓":"Salamangreat Almiraj","青眼白龍":"Blue-Eyes White Dragon","藍眼白龍":"Blue-Eyes White Dragon","青眼亞白龍":"Blue-Eyes Alternative White Dragon","青眼混沌極龍":"Blue-Eyes Chaos MAX Dragon","青眼精神龍":"Blue-Eyes Spirit Dragon","青眼雙暴龍":"Blue-Eyes Twin Burst Dragon","青眼巨龍":"Blue-Eyes Ultimate Dragon","加農龍":"Sage with Eyes of Blue","黑魔術師":"Dark Magician","黑魔術師女孩":"Dark Magician Girl","宣告者精靈":"Herald of Perfection","宣告者天使":"Herald of Orange Light","神碑的泉":"Bystial Druiswurm","神碑的大蛇":"Bystial Magnamhut","神碑的白虎":"Bystial Alba Los","神碑魯西法":"Bystial Lubellion","神碑":"Bystial Druiswurm","增援":"Reinforcement of the Army","死者蘇生":"Monster Reborn","黑洞":"Dark Hole","哈比羽毛帚":"Harpie's Feather Duster","月之書":"Book of Moon","心變":"Mind Control","貪吝壺":"Pot of Desires","繁盛之壺":"Pot of Prosperity","貪慾之壺":"Pot of Greed","三抽壺":"Pot of Extravagance","一死換一生":"One for One","拯救兔子":"Rescue Rabbit","緊急傳送":"Emergency Teleport","融合":"Polymerization","超融合":"Super Polymerization","場地淨化":"Terraforming","魔封之芳香":"Magical Meltdown","始源融合":"Beginning of Heaven and Earth","神之宣告":"Solemn Judgment","神之警告":"Solemn Warning","神之通知":"Solemn Strike","激流葬":"Torrential Tribute","奈落的落穴":"Bottomless Trap Hole","禁忌的液滴":"Forbidden Droplet","禁忌的聖壺":"Forbidden Chalice","禁忌的衣裳":"Forbidden Dress","技能枷鎖":"Skill Drain","召喚限制":"Summon Limit","閃刀姬-隼":"Sky Striker Ace - Kagari","閃刀姬-鶴":"Sky Striker Ace - Shizuku","閃刀起動":"Sky Striker Mobilize - Engage!","卡修特拉費尼爾":"Kashtira Fenrir","卡修特拉獨角獸":"Kashtira Unicorn","斬機馬格納":"Mathmech Nabla","斬機無限大":"Mathmech Infinity","轟雷帝":"Thunder King Rai-Oh","戰士的生還":"The Warrior Returning Alive","三戰的才":"Triple Tactics Talent","三戰的號":"Triple Tactics Thrust","閃光融合":"Brilliant Fusion","无限泡影":"Infinite Impermanence","效果无效":"Effect Veiler","墓穴的指名者":"Called by the Grave","抹杀的指名者":"Crossout Designator","青眼白龙":"Blue-Eyes White Dragon","黑魔术师":"Dark Magician","死者苏生":"Monster Reborn","贪吝壶":"Pot of Desires","繁盛之壶":"Pot of Prosperity","禁忌的液滴":"Forbidden Droplet","神之宣告":"Solemn Judgment","神之警告":"Solemn Warning","天盃龙白龙":"Tenpai Dragon Paidra","天盃龙赤龙":"Tenpai Dragon Chundra","蛇眼艾克塞尔":"Snake-Eye Ash","黑女巫黛亚柏尔斯塔":"Diabellstar the Black Witch","灰流うらら":"Ash Blossom & Joyous Spring","増殖するG":'Maxx "C"',"エフェクト・ヴェーラー":"Effect Veiler","幽鬼うさぎ":"Ghost Ogre & Snow Rabbit","屋敷わらし":"Ghost Belle & Haunted Mansion","D.D.クロウ":"D.D. Crow","墓穴の指名者":"Called by the Grave","抹殺の指名者":"Crossout Designator","青眼の白龍":"Blue-Eyes White Dragon","ブラック・マジシャン":"Dark Magician","死者蘇生":"Monster Reborn","強欲で謙虚な壺":"Pot of Desires","天盃龍パイドラ":"Tenpai Dragon Paidra","天盃龍チュンドラ":"Tenpai Dragon Chundra","天盃龍ゲンリュウ":"Tenpai Dragon Genryu","スネークアイ・エクセル":"Snake-Eye Ash","ダイアベルスター":"Diabellstar the Black Witch","神の宣告":"Solemn Judgment","神の警告":"Solemn Warning","ハーピィの羽根帚":"Harpie's Feather Duster","ライトニング・ストーム":"Lightning Storm","うらら":"Ash Blossom & Joyous Spring","ニビル":"Nibiru, the Primal Being","ヴェーラー":"Effect Veiler","原始生命態ニビル":"Nibiru, the Primal Being","三戦の才":"Triple Tactics Talent"};
+
 function isChinese(str) {
-  return /[\u4e00-\u9fff\u3400-\u4dbf]/.test(str);
+  return /[\u4e00-\u9fff\u3400-\u4dbf\u3040-\u30ff]/.test(str);
 }
 
-// 中文搜尋：呼叫 ygocdb.com 取得英文名對照
-async function zhSearchOnline(q) {
-  const res = await fetch(`https://ygocdb.com/api/v0/?search=${encodeURIComponent(q)}&callback=`);
-  if (!res.ok) throw new Error('ygocdb fail');
-  const data = await res.json();
-  const results = data.result || [];
-  return results.slice(0, 12).map(r => ({
-    zhName: r.tc?.name || r.sc?.name || r.en?.name || '',
-    enName: r.en?.name || ''
-  })).filter(r => r.enName);
+// 本地模糊搜尋中文/日文 → [{zhName, enName}]
+function zhLocalSearch(q) {
+  const hits = [];
+  const seen = new Set();
+  for (const [zh, en] of Object.entries(ZH_MAP)) {
+    if (zh.includes(q) || en.toLowerCase().includes(q.toLowerCase())) {
+      if (!seen.has(en)) { seen.add(en); hits.push({ zhName: zh, enName: en }); }
+    }
+  }
+  return hits.slice(0, 12);
 }
 
-async function fetchByNames(enNames, lim) {
+function cardImgUrl(cardId) {
+  return `https://images.ygoprodeck.com/images/cards_small/${cardId}.jpg`;
+}
+
+async function fetchByEnNames(enNames, lim) {
   if (!enNames.length) return [];
   const url = `https://db.ygoprodeck.com/api/v7/cardinfo.php?name=${enNames.map(n => encodeURIComponent(n)).join('|')}`;
   try {
@@ -1057,7 +1064,7 @@ async function fetchByNames(enNames, lim) {
       else if (banInfo?.ban_tcg === 'Limited') limit = 1;
       else if (banInfo?.ban_tcg === 'Semi-Limited') limit = 2;
       if (lim !== '') limit = parseInt(lim);
-      return { name: c.name, zhName: null, limit, cardType: c.type, race: c.race, attribute: c.attribute };
+      return { name: c.name, zhName: null, limit, cardType: c.type, race: c.race, attribute: c.attribute, imgId: c.id };
     });
   } catch { return []; }
 }
@@ -1082,17 +1089,15 @@ async function orSearchCard(q) {
       let items = [];
 
       if (trimmed && isChinese(trimmed)) {
-        // ── 中文：呼叫 ygocdb.com 即時查詢 ──
-        const matches = await zhSearchOnline(trimmed);
+        // ── 中文/日文：查本地對照表 → 用英文名查 YGOPRODECK ──
+        const matches = zhLocalSearch(trimmed);
         if (!matches.length) {
-          document.getElementById('or-search-status').textContent = '找不到中文卡名';
+          document.getElementById('or-search-status').textContent = '找不到中文卡名，可嘗試英文搜尋';
           orHideSuggest(); return;
         }
-        const fetched = await fetchByNames(matches.map(m => m.enName), lim);
-        // 把中文名對應回來
+        const fetched = await fetchByEnNames(matches.map(m => m.enName), lim);
         const zhMap = Object.fromEntries(matches.map(m => [m.enName, m.zhName]));
         items = fetched.map(c => ({ ...c, zhName: zhMap[c.name] || null }));
-        // 本地套用篩選器
         if (cat === 'monster') items = items.filter(c => c.cardType && !c.cardType.includes('Spell') && !c.cardType.includes('Trap'));
         else if (cat === 'spell') items = items.filter(c => c.cardType?.includes('Spell'));
         else if (cat === 'trap')  items = items.filter(c => c.cardType?.includes('Trap'));
@@ -1101,7 +1106,7 @@ async function orSearchCard(q) {
         if (lim !== '') items = items.filter(c => String(c.limit) === lim);
 
       } else {
-        // ── 英文 / 純篩選器 → 直接查 YGOPRODECK ──
+        // ── 英文 / 純篩選器 ──
         let url = 'https://db.ygoprodeck.com/api/v7/cardinfo.php?num=12&offset=0';
         if (trimmed) url += `&fname=${encodeURIComponent(trimmed)}`;
         if (cat === 'monster') url += '&type=Normal%20Monster,Effect%20Monster,Fusion%20Monster,Synchro%20Monster,XYZ%20Monster,Link%20Monster,Pendulum%20Effect%20Monster,Ritual%20Monster';
@@ -1123,7 +1128,7 @@ async function orSearchCard(q) {
           else if (banInfo?.ban_tcg === 'Limited') limit = 1;
           else if (banInfo?.ban_tcg === 'Semi-Limited') limit = 2;
           if (lim !== '') limit = parseInt(lim);
-          return { name: c.name, zhName: null, limit, cardType: c.type, race: c.race, attribute: c.attribute };
+          return { name: c.name, zhName: null, limit, cardType: c.type, race: c.race, attribute: c.attribute, imgId: c.id };
         });
       }
 
@@ -1149,14 +1154,16 @@ function orShowSuggest() {
     const displayName = c.zhName && c.zhName !== c.name ? c.zhName : c.name;
     const subName = c.zhName && c.zhName !== c.name ? c.name : '';
     const subInfo = [c.attribute, c.race].filter(Boolean).join(' · ');
+    const imgUrl = c.imgId ? cardImgUrl(c.imgId) : '';
     return `<div data-i="${i}" onclick="orPickSuggest(${i})"
-      style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(120,100,255,0.08);"
-      onmouseover="this.style.background='rgba(123,92,255,0.1)'" onmouseout="this.style.background='transparent'">
+      style="display:flex;align-items:center;gap:10px;padding:6px 12px;cursor:pointer;border-bottom:1px solid rgba(120,100,255,0.08);"
+      onmouseover="this.style.background='rgba(123,92,255,0.12)'" onmouseout="this.style.background='transparent'">
+      ${imgUrl ? `<img src="${imgUrl}" loading="lazy" style="width:38px;height:55px;object-fit:cover;border-radius:3px;border:1px solid rgba(120,100,255,0.2);flex-shrink:0;" onerror="this.style.display='none'">` : ''}
       <div style="flex:1;min-width:0;">
         <div style="font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${displayName}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:1px;">${subName ? subName + ' · ' : ''}${subInfo}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${subName ? subName + ' · ' : ''}${subInfo}</div>
       </div>
-      <span style="font-size:10px;padding:1px 6px;border-radius:3px;margin-left:10px;white-space:nowrap;${lStyle}">${lLabel}</span>
+      <span style="font-size:10px;padding:1px 6px;border-radius:3px;white-space:nowrap;flex-shrink:0;${lStyle}">${lLabel}</span>
     </div>`;
   }).join('');
   box.style.display = 'block';
@@ -1171,7 +1178,7 @@ function orPickSuggest(i) {
   const c = orSuggestItems[i];
   if (!c) return;
   orSelectedCard = c;
-  document.getElementById('or-new-name').value = c.name;
+  document.getElementById('or-new-name').value = c.zhName || c.name;
   const maxCount = c.limit === 0 ? 0 : c.limit;
   const countEl = document.getElementById('or-new-count');
   countEl.max = maxCount || 3;
