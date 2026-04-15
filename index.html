@@ -1027,81 +1027,25 @@ function orResetFilters() {
   orSearchCard(document.getElementById('or-new-name').value);
 }
 
-// ── 中英文卡名對照表（繁體 / 簡體 → 英文）──────────────
-const ZH_EN = {
-  // 手坑
-  '灰流幽鬼':'Ash Blossom & Joyous Spring','增殖的G':'Maxx "C"','無限泡影':'Infinite Impermanence',
-  '原始生命態尼比魯':'Nibiru, the Primal Being','效果無效':'Effect Veiler','幻創的騎諾修伊':'Ghost Belle & Haunted Mansion',
-  '怪獸奪取':'Ghost Ogre & Snow Rabbit','墓穴的指名者':'Called by the Grave','抹殺的指名者':'Crossout Designator',
-  '泡影':'Infinite Impermanence','D.D.烏鴉':'D.D. Crow','幻貌王幽靈騎士':'Ghost Reaper & Winter Cherries',
-  // 蛇眼
-  '蛇眼艾克塞爾':'Snake-Eye Ash','原罪寶-蛇眼':'Original Sinful Spoils - Snake-Eye',
-  '蛇眼融合':'Snake-Eyes Poplar','炎之蛇眼':'Diabellstar the Black Witch',
-  '黑女巫黛亞柏爾斯塔':'Diabellstar the Black Witch','蛇眼的炎龍':'Snake-Eye Flamberge Dragon',
-  // 天盃龍
-  '天盃龍白龍':'Tenpai Dragon Paidra','天盃龍赤龍':'Tenpai Dragon Chundra','天盃龍黃龍':'Tenpai Dragon Genryu',
-  '炎洗禮':'Flame Purification',
-  // 瑪麗斯
-  '瑪麗斯海魔女':'Marincess Sea Horse','瑪麗斯珊瑚三角':'Marincess Coral Triangle',
-  // 碧眼
-  '藍眼白龍':'Blue-Eyes White Dragon','青眼白龍':'Blue-Eyes White Dragon',
-  '青眼亞白龍':'Blue-Eyes Alternative White Dragon','青眼混沌極龍':'Blue-Eyes Chaos MAX Dragon',
-  '青眼精神龍':'Blue-Eyes Spirit Dragon','加農龍':'Sage with Eyes of Blue',
-  // 黑魔術師
-  '黑魔術師':'Dark Magician','黑魔術師女孩':'Dark Magician Girl','魔法師之力':'Magician\'s Force',
-  // 燃烽
-  '燃烽的幸運貓':'Salamangreat Almiraj','燃烽牛犬':'Salamangreat Gazelle','燃烽獅子':'Salamangreat Sunlight Wolf',
-  '燃烽轉生':'Salamangreat Rage','燃烽吼聲':'Salamangreat Roar',
-  // 鬼劍士
-  '斬機':'Mathmech','劍鬥獸':'Gladiator Beast','魔救':'Mystic Mine',
-  // 通用魔法/陷阱
-  '一死換一生':'One for One','�拯救兔子':'Rescue Rabbit','黑洞':'Dark Hole',
-  '怪獸再生':'Monster Reborn','天使的施捨':'Pot of Greed','貪慾之壺':'Pot of Greed',
-  '貪吝壺':'Pot of Desires','三抽壺':'Pot of Extravagance','繁盛之壺':'Pot of Prosperity',
-  '魔法師之右手':'Right Hand of the Magic God','神之通告':'Divine Warning',
-  '魔封之芳香':'Magical Meltdown','融合':'Polymerization','始源融合':'Beginning of Heaven and Earth',
-  '超融合':'Super Polymerization','額外融合':'Extra Fusion',
-  '激流葬':'Torrential Tribute','奈落的落穴':'Bottomless Trap Hole',
-  '神之宣告':'Counter Gate','神之警告':'Solemn Warning','神之通知':'Solemn Strike',
-  '禁忌的聖壺':'Forbidden Chalice','禁忌的衣裳':'Forbidden Dress','禁忌的液滴':'Forbidden Droplet',
-  '三位一體的力量':'Summon Limit','場地淨化':'Terraforming','活路':'Harpie\'s Feather Duster',
-  // 勇士龍
-  '捕食植物奧菲斯':'Predaplant Verte Anaconda',
-  // 流行環境
-  '宣告者精靈':'Herald of Perfection','宣告者天使':'Herald of Orange Light',
-  '神碑':'Bystial','神碑的泉':'Bystial Druiswurm','魔界劇團':'Abyss Actor',
-  '轟雷帝':'Thunder King Rai-Oh',
-  // 搜索/通用
-  '增援':'Reinforcement of the Army','戰士的生還':'The Warrior Returning Alive',
-  '歸還與神壺':'Return and Heaven Pot','奪取壺':'Pot of Acquisitiveness',
-  '緊急傳送':'Emergency Teleport','死者蘇生':'Monster Reborn',
-  '月之書':'Book of Moon','心變':'Mind Control',
-  // 簡體對照（部分）
-  '灰流幽鬼':'Ash Blossom & Joyous Spring','增殖的G':'Maxx "C"',
-  '无限泡影':'Infinite Impermanence','效果无效':'Effect Veiler',
-};
-
 function isChinese(str) {
   return /[\u4e00-\u9fff\u3400-\u4dbf]/.test(str);
 }
 
-// 中文模糊比對 → 回傳 [{zhName, enName}]
-function zhSearch(q) {
-  const hits = [];
-  const lq = q.toLowerCase();
-  for (const [zh, en] of Object.entries(ZH_EN)) {
-    if (zh.includes(q) || zh.toLowerCase().includes(lq)) {
-      hits.push({ zhName: zh, enName: en });
-    }
-  }
-  // dedupe by enName
-  const seen = new Set();
-  return hits.filter(h => { if (seen.has(h.enName)) return false; seen.add(h.enName); return true; });
+// 中文搜尋：呼叫 ygocdb.com 取得英文名對照
+async function zhSearchOnline(q) {
+  const res = await fetch(`https://ygocdb.com/api/v0/?search=${encodeURIComponent(q)}&callback=`);
+  if (!res.ok) throw new Error('ygocdb fail');
+  const data = await res.json();
+  const results = data.result || [];
+  return results.slice(0, 12).map(r => ({
+    zhName: r.tc?.name || r.sc?.name || r.en?.name || '',
+    enName: r.en?.name || ''
+  })).filter(r => r.enName);
 }
 
 async function fetchByNames(enNames, lim) {
   if (!enNames.length) return [];
-  const url = `https://db.ygoprodeck.com/api/v7/cardinfo.php?name=${enNames.map(n=>encodeURIComponent(n)).join('|')}`;
+  const url = `https://db.ygoprodeck.com/api/v7/cardinfo.php?name=${enNames.map(n => encodeURIComponent(n)).join('|')}`;
   try {
     const res = await fetch(url);
     if (!res.ok) return [];
@@ -1138,27 +1082,26 @@ async function orSearchCard(q) {
       let items = [];
 
       if (trimmed && isChinese(trimmed)) {
-        // ── 中文：先查本地對照表，再用英文名打 YGOPRODECK ──
-        const matches = zhSearch(trimmed);
+        // ── 中文：呼叫 ygocdb.com 即時查詢 ──
+        const matches = await zhSearchOnline(trimmed);
         if (!matches.length) {
-          document.getElementById('or-search-status').textContent = '找不到中文卡名，試試英文搜尋';
+          document.getElementById('or-search-status').textContent = '找不到中文卡名';
           orHideSuggest(); return;
         }
         const fetched = await fetchByNames(matches.map(m => m.enName), lim);
         // 把中文名對應回來
-        items = fetched.map(c => {
-          const match = matches.find(m => m.enName === c.name);
-          return { ...c, zhName: match?.zhName || null };
-        });
+        const zhMap = Object.fromEntries(matches.map(m => [m.enName, m.zhName]));
+        items = fetched.map(c => ({ ...c, zhName: zhMap[c.name] || null }));
         // 本地套用篩選器
         if (cat === 'monster') items = items.filter(c => c.cardType && !c.cardType.includes('Spell') && !c.cardType.includes('Trap'));
         else if (cat === 'spell') items = items.filter(c => c.cardType?.includes('Spell'));
         else if (cat === 'trap')  items = items.filter(c => c.cardType?.includes('Trap'));
         if (race) items = items.filter(c => c.race === race);
         if (attr) items = items.filter(c => c.attribute === attr);
+        if (lim !== '') items = items.filter(c => String(c.limit) === lim);
 
       } else {
-        // ── 英文 / 純篩選器 → 直接打 YGOPRODECK ──
+        // ── 英文 / 純篩選器 → 直接查 YGOPRODECK ──
         let url = 'https://db.ygoprodeck.com/api/v7/cardinfo.php?num=12&offset=0';
         if (trimmed) url += `&fname=${encodeURIComponent(trimmed)}`;
         if (cat === 'monster') url += '&type=Normal%20Monster,Effect%20Monster,Fusion%20Monster,Synchro%20Monster,XYZ%20Monster,Link%20Monster,Pendulum%20Effect%20Monster,Ritual%20Monster';
@@ -1195,7 +1138,6 @@ async function orSearchCard(q) {
     }
   }, 350);
 }
-
 
 function orShowSuggest() {
   const box = document.getElementById('or-suggest');
