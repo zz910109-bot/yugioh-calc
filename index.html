@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>遊戲王機率計算器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: rgba(120,100,255,0.18);
+    --border2: rgba(120,100,255,0.35);
+    --accent: #7b5cff;
+    --accent2: #a084ff;
+    --gold: #e8c84a;
+    --gold2: #f5d96e;
+    --red: #ff4d6d;
+    --green: #3de88a;
+    --amber: #ffaa44;
+    --text: #e8e6f0;
+    --text2: #9994b8;
+    --text3: #5a5578;
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Noto Sans TC', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(123,92,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(123,92,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 1.5rem 4rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    padding: 3rem 0 2rem;
+    text-align: center;
+    position: relative;
+  }
+
+  .header-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent2);
+    border: 1px solid var(--border2);
+    padding: 4px 14px;
+    border-radius: 2px;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+  }
+
+  header h1 {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    background: linear-gradient(135deg, var(--gold2) 0%, var(--accent2) 60%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+  }
+
+  header p {
+    font-size: 14px;
+    color: var(--text2);
+    font-weight: 300;
+  }
+
+  /* Tab nav */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+  }
+
+  .tab-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--text2);
+    font-family: var(--sans);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .tab-btn:hover { background: var(--surface2); color: var(--text); }
+  .tab-btn.active {
+    background: linear-gradient(135deg, rgba(123,92,255,0.25), rgba(160,132,255,0.15));
+    color: var(--accent2);
+    border: 1px solid var(--border2);
+  }
+
+  /* Panel */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+  }
+
+  .card-title {
+    font-size: 12px;
+    font-family: var(--mono);
+    letter-spacing: 2px;
+    color: var(--accent2);
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+  }
+
+  /* Slider controls */
+  .controls { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
+
+  .control-row {
+    display: grid;
+    grid-template-columns: 140px 1fr 60px;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .control-label { font-size: 13px; color: var(--text2); }
+  .control-val {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--gold2);
+    text-align: right;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    outline: none;
+    border: 1px solid var(--border);
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(123,92,255,0.6);
+    transition: box-shadow 0.2s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 14px rgba(123,92,255,0.9);
+  }
+
+  /* Metric grid */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  .metric {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .metric-label { font-size: 11px; color: var(--text3); letter-spacing: 1px; margin-bottom: 6px; }
+  .metric-value {
+    font-family: var(--mono);
+    font-size: 1.6rem;
+    font-weight: 500;
+    transition: color 0.3s;
+  }
+
+  .clr-good { color: var(--green); }
+  .clr-warn { color: var(--amber); }
+  .clr-bad  { color: var(--red); }
+  .clr-neutral { color: var(--text2); }
+
+  /* Bar */
+  .bar-section { margin-bottom: 1rem; }
+  .bar-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); margin-bottom: 5px; }
+  .bar-track {
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s cubic-bezier(0.4,0,0.2,1), background 0.3s;
+  }
+
+  /* Table */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--text3);
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 7px 10px; border-bottom: 1px solid rgba(120,100,255,0.08); color: var(--text2); }
+  tr.hl td { color: var(--text); font-weight: 500; background: rgba(123,92,255,0.07); }
+  tr:hover td { background: rgba(123,92,255,0.04); }
+
+  /* Insight box */
+  .insight {
+    background: rgba(123,92,255,0.08);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.7;
+    margin-top: 1rem;
+  }
+  .insight strong { color: var(--gold2); }
+
+  /* dot */
+  .dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+
+  /* Formula display */
+  .formula {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text3);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 1rem;
+    letter-spacing: 0.5px;
+  }
+
+  /* Multi-combo rows */
+  .combo-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.2rem; }
+  .combo-row {
+    display: grid;
+    grid-template-columns: 200px 1fr 60px;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* Responsive */
+  @media (max-width: 560px) {
+    .control-row { grid-template-columns: 100px 1fr 48px; }
+    .combo-row { grid-template-columns: 140px 1fr 48px; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="header-badge">Yu-Gi-Oh! Probability Engine</div>
+    <h1>遊戲王機率計算器</h1>
+    <p>超幾何分布 · 精確計算 · 全場景覆蓋</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('starter')">啟動點</button>
+    <button class="tab-btn" onclick="switchTab('handtrap')">手坑</button>
+    <button class="tab-btn" onclick="switchTab('combo')">多牌配合</button>
+    <button class="tab-btn" onclick="switchTab('brick')">磚牌風險</button>
+    <button class="tab-btn" onclick="switchTab('compare')">牌組張數比較</button>
+  </div>
+
+  <!-- ===== TAB 1: 啟動點（整合複合條件）===== -->
+  <div id="tab-starter" class="panel active">
+
+    <!-- 模式切換 -->
+    <div style="display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px;margin-bottom:1.5rem;">
+      <button id="mode-simple-btn" onclick="switchMode('simple')"
+        style="flex:1;padding:8px 12px;border-radius:4px;border:1px solid var(--border2);background:linear-gradient(135deg,rgba(123,92,255,0.25),rgba(160,132,255,0.15));color:var(--accent2);font-family:var(--sans);font-size:13px;cursor:pointer;">
+        簡易模式（單一啟動點）
+      </button>
+      <button id="mode-adv-btn" onclick="switchMode('adv')"
+        style="flex:1;padding:8px 12px;border-radius:4px;border:none;background:transparent;color:var(--text2);font-family:var(--sans);font-size:13px;cursor:pointer;">
+        進階模式（單卡 OR 多卡配合）
+      </button>
+    </div>
+
+    <!-- ── 簡易模式 ── -->
+    <div id="mode-simple">
+      <div class="card">
+        <div class="card-title">// 啟動點計算</div>
+        <div class="formula">P(≥1) = 1 − C(N−K, n) / C(N, n)　　超幾何分布</div>
+        <div class="controls">
+          <div class="control-row">
+            <span class="control-label">啟動點張數</span>
+            <input type="range" id="s-k" min="1" max="20" value="9" step="1" oninput="calcStarter()">
+            <span class="control-val" id="s-k-v">9 張</span>
+          </div>
+          <div class="control-row">
+            <span class="control-label">牌組張數</span>
+            <input type="range" id="s-n" min="40" max="60" value="40" step="1" oninput="calcStarter()">
+            <span class="control-val" id="s-n-v">40 張</span>
+          </div>
+          <div class="control-row">
+            <span class="control-label">起手張數</span>
+            <input type="range" id="s-h" min="5" max="6" value="5" step="1" oninput="calcStarter()">
+            <span class="control-val" id="s-h-v">5 張</span>
+          </div>
+        </div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-label">≥1 張啟動</div><div class="metric-value" id="s-m1">—</div></div>
+          <div class="metric"><div class="metric-label">≥2 張啟動</div><div class="metric-value" id="s-m2">—</div></div>
+          <div class="metric"><div class="metric-label">0 張（空手）</div><div class="metric-value" id="s-m0">—</div></div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-meta"><span>≥1 張啟動率</span><span id="s-bar1-v">—</span></div>
+          <div class="bar-track"><div class="bar-fill" id="s-bar1"></div></div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-meta"><span>≥2 張啟動率</span><span id="s-bar2-v">—</span></div>
+          <div class="bar-track"><div class="bar-fill" id="s-bar2"></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">// 參考對照表（當前牌組張數）</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>啟動點張數</th><th>≥1 張</th><th>≥2 張</th><th>0 張</th><th>評估</th></tr></thead>
+            <tbody id="s-table"></tbody>
+          </table>
+        </div>
+        <div class="insight" id="s-insight"></div>
+      </div>
+    </div>
+
+    <!-- ── 進階模式 ── -->
+    <div id="mode-adv" style="display:none;">
+      <div class="card">
+        <div class="card-title">// 複合啟動條件設定</div>
+        <div class="formula">P(條件1 OR 條件2 OR ...) 　容斥原理 · 支援單卡 / 雙卡 / 三卡組合</div>
+
+        <div style="display:flex;gap:16px;margin-bottom:1.2rem;flex-wrap:wrap;">
+          <div class="control-row" style="grid-template-columns:90px 140px 60px;">
+            <span class="control-label">牌組張數</span>
+            <input type="range" id="or-N" min="40" max="60" value="40" step="1" oninput="calcOrCombo()">
+            <span class="control-val" id="or-N-v">40 張</span>
+          </div>
+          <div class="control-row" style="grid-template-columns:90px 140px 60px;">
+            <span class="control-label">起手張數</span>
+            <input type="range" id="or-n" min="5" max="6" value="5" step="1" oninput="calcOrCombo()">
+            <span class="control-val" id="or-n-v">5 張</span>
+          </div>
+        </div>
+
+        <div class="card-title" style="margin-bottom:.7rem;">// 牌組卡片</div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:1rem;margin-bottom:1.2rem;">
+
+          <!-- 篩選器列 -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+            <select id="f-category" onchange="orSearchCard(document.getElementById('or-new-name').value)"
+              style="background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text2);font-family:var(--sans);font-size:12px;padding:4px 8px;cursor:pointer;outline:none;">
+              <option value="">全部類型</option>
+              <option value="monster">怪獸</option>
+              <option value="spell">魔法</option>
+              <option value="trap">陷阱</option>
+            </select>
+            <select id="f-race" onchange="orSearchCard(document.getElementById('or-new-name').value)"
+              style="background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text2);font-family:var(--sans);font-size:12px;padding:4px 8px;cursor:pointer;outline:none;">
+              <option value="">全部種族</option>
+              <option value="Dragon">龍族</option>
+              <option value="Spellcaster">魔法使族</option>
+              <option value="Warrior">戰士族</option>
+              <option value="Beast">獸族</option>
+              <option value="Beast-Warrior">獸戰士族</option>
+              <option value="Fiend">惡魔族</option>
+              <option value="Zombie">不死族</option>
+              <option value="Machine">機械族</option>
+              <option value="Aqua">水族</option>
+              <option value="Pyro">炎族</option>
+              <option value="Rock">岩石族</option>
+              <option value="Insect">昆蟲族</option>
+              <option value="Plant">植物族</option>
+              <option value="Thunder">雷族</option>
+              <option value="Dinosaur">恐龍族</option>
+              <option value="Reptile">爬蟲類族</option>
+              <option value="Fish">魚族</option>
+              <option value="Sea Serpent">海龍族</option>
+              <option value="Fairy">天使族</option>
+              <option value="Psychic">念動力族</option>
+              <option value="Divine-Beast">神獸族</option>
+              <option value="Wyrm">幻龍族</option>
+              <option value="Cyberse">電子界族</option>
+              <option value="Illusion">幻想魔族</option>
+            </select>
+            <select id="f-attribute" onchange="orSearchCard(document.getElementById('or-new-name').value)"
+              style="background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text2);font-family:var(--sans);font-size:12px;padding:4px 8px;cursor:pointer;outline:none;">
+              <option value="">全部屬性</option>
+              <option value="DARK">闇</option>
+              <option value="LIGHT">光</option>
+              <option value="FIRE">炎</option>
+              <option value="WATER">水</option>
+              <option value="WIND">風</option>
+              <option value="EARTH">地</option>
+              <option value="DIVINE">神</option>
+            </select>
+            <select id="f-limit" onchange="orSearchCard(document.getElementById('or-new-name').value)"
+              style="background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text2);font-family:var(--sans);font-size:12px;padding:4px 8px;cursor:pointer;outline:none;">
+              <option value="">全部限制</option>
+              <option value="3">無限制</option>
+              <option value="2">限二</option>
+              <option value="1">限一</option>
+              <option value="0">禁止</option>
+            </select>
+            <button onclick="orResetFilters()"
+              style="padding:4px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text3);font-size:12px;cursor:pointer;">重置篩選</button>
+          </div>
+
+          <!-- 搜尋列 -->
+          <div style="position:relative;margin-bottom:8px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:180px;position:relative;">
+                <input type="text" id="or-new-name" placeholder="輸入卡名搜尋（中文或英文），或只用篩選器瀏覽..."
+                  autocomplete="off"
+                  style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--sans);font-size:13px;padding:6px 10px;outline:none;"
+                  oninput="orSearchCard(this.value)" onkeydown="orSearchKeydown(event)">
+                <div id="or-suggest" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:0 0 6px 6px;z-index:100;max-height:240px;overflow-y:auto;"></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:12px;color:var(--text3);">張數</span>
+                <input type="number" id="or-new-count" value="3" min="1" max="3"
+                  style="width:46px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--gold2);font-family:var(--mono);font-size:13px;padding:6px 8px;text-align:center;outline:none;">
+                <span id="or-limit-badge" style="font-size:11px;padding:2px 7px;border-radius:3px;display:none;"></span>
+              </div>
+              <button onclick="orAddCard()"
+                style="padding:6px 14px;background:rgba(123,92,255,0.15);border:1px solid var(--border2);border-radius:4px;color:var(--accent2);font-family:var(--sans);font-size:13px;cursor:pointer;">+ 加入</button>
+            </div>
+            <div id="or-search-status" style="font-size:11px;color:var(--text3);margin-top:4px;min-height:14px;"></div>
+          </div>
+
+          <div id="or-card-list"></div>
+        </div>
+
+        <div class="card-title" style="margin-bottom:.7rem;">// 啟動條件（每條獨立可觸發展開）</div>
+        <div id="or-cond-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button onclick="orAddCond('solo')"
+            style="padding:6px 16px;background:rgba(61,232,138,0.08);border:1px solid rgba(61,232,138,0.3);border-radius:4px;color:#3de88a;font-family:var(--sans);font-size:13px;cursor:pointer;">+ 單卡啟動</button>
+          <button onclick="orAddCond('combo')"
+            style="padding:6px 16px;background:rgba(123,92,255,0.10);border:1px solid var(--border2);border-radius:4px;color:var(--accent2);font-family:var(--sans);font-size:13px;cursor:pointer;">+ 多卡配合</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">// 整體啟動率報告</div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-label">整體啟動率</div><div class="metric-value" id="or-total">—</div></div>
+          <div class="metric"><div class="metric-label">最佳單卡率</div><div class="metric-value" id="or-solo">—</div></div>
+          <div class="metric"><div class="metric-label">最佳配合率</div><div class="metric-value" id="or-combo-best">—</div></div>
+          <div class="metric"><div class="metric-label">完全空手</div><div class="metric-value" id="or-fail">—</div></div>
+        </div>
+        <div id="or-bars"></div>
+        <div class="insight" id="or-insight">請新增卡片與條件後自動計算。</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== TAB 2: 手坑 ===== -->
+  <div id="tab-handtrap" class="panel">
+    <div class="card">
+      <div class="card-title">// 手坑計算（後手目標：≥2 張）</div>
+      <div class="formula">P(≥2) = 1 − P(0) − P(1)　　P(x) = C(K,x)·C(N−K,n−x) / C(N,n)</div>
+      <div class="controls">
+        <div class="control-row">
+          <span class="control-label">手坑張數</span>
+          <input type="range" id="h-k" min="1" max="20" value="9" step="1" oninput="calcHandtrap()">
+          <span class="control-val" id="h-k-v">9 張</span>
+        </div>
+        <div class="control-row">
+          <span class="control-label">牌組張數</span>
+          <input type="range" id="h-n" min="40" max="60" value="40" step="1" oninput="calcHandtrap()">
+          <span class="control-val" id="h-n-v">40 張</span>
+        </div>
+        <div class="control-row">
+          <span class="control-label">起手張數</span>
+          <input type="range" id="h-h" min="5" max="6" value="5" step="1" oninput="calcHandtrap()">
+          <span class="control-val" id="h-h-v">5 張</span>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">≥2 張手坑</div><div class="metric-value" id="h-m2">—</div></div>
+        <div class="metric"><div class="metric-label">≥1 張手坑</div><div class="metric-value" id="h-m1">—</div></div>
+        <div class="metric"><div class="metric-label">0 張（裸手）</div><div class="metric-value" id="h-m0">—</div></div>
+      </div>
+      <div class="bar-section">
+        <div class="bar-meta"><span>≥2 張手坑</span><span id="h-bar2-v">—</span></div>
+        <div class="bar-track"><div class="bar-fill" id="h-bar2"></div></div>
+      </div>
+      <div class="bar-section">
+        <div class="bar-meta"><span>≥1 張手坑</span><span id="h-bar1-v">—</span></div>
+        <div class="bar-track"><div class="bar-fill" id="h-bar1"></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">// 參考對照表</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>手坑張數</th><th>≥2 張</th><th>≥1 張</th><th>0 張</th><th>評估</th></tr></thead>
+          <tbody id="h-table"></tbody>
+        </table>
+      </div>
+      <div class="insight" id="h-insight"></div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 3: 多牌配合 ===== -->
+  <div id="tab-combo" class="panel">
+    <div class="card">
+      <div class="card-title">// 多牌配合機率（兩種牌各需至少1張）</div>
+      <div class="formula">P(A≥1 且 B≥1) = 1 − P(A=0) − P(B=0) + P(A=0 且 B=0)　　容斥原理</div>
+      <div class="controls">
+        <div class="control-row">
+          <span class="control-label">A 牌張數</span>
+          <input type="range" id="c-a" min="1" max="15" value="3" step="1" oninput="calcCombo()">
+          <span class="control-val" id="c-a-v">3 張</span>
+        </div>
+        <div class="control-row">
+          <span class="control-label">B 牌張數</span>
+          <input type="range" id="c-b" min="1" max="15" value="3" step="1" oninput="calcCombo()">
+          <span class="control-val" id="c-b-v">3 張</span>
+        </div>
+        <div class="control-row">
+          <span class="control-label">牌組張數</span>
+          <input type="range" id="c-n" min="40" max="60" value="40" step="1" oninput="calcCombo()">
+          <span class="control-val" id="c-n-v">40 張</span>
+        </div>
+        <div class="control-row">
+          <span class="control-label">起手張數</span>
+          <input type="range" id="c-h" min="5" max="6" value="5" step="1" oninput="calcCombo()">
+          <span class="control-val" id="c-h-v">5 張</span>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">A、B 同時有</div><div class="metric-value" id="c-both">—</div></div>
+        <div class="metric"><div class="metric-label">有 A（≥1）</div><div class="metric-value" id="c-a-only">—</div></div>
+        <div class="metric"><div class="metric-label">有 B（≥1）</div><div class="metric-value" id="c-b-only">—</div></div>
+      </div>
+      <div class="bar-section">
+        <div class="bar-meta"><span>A+B 配合率</span><span id="c-bar-v">—</span></div>
+        <div class="bar-track"><div class="bar-fill" id="c-bar"></div></div>
+      </div>
+      <div class="insight" id="c-insight"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">// A+B 張數組合對照</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>A 張數</th><th>B 張數</th><th>A+B 合計</th><th>同時有機率</th><th>評估</th></tr></thead>
+          <tbody id="c-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 4: 磚牌 ===== -->
+  <div id="tab-brick" class="panel">
+    <div class="card">
+      <div class="card-title">// 磚牌風險計算</div>
+      <div class="formula">磚手 = 起手中磚牌 ≥ 指定數量時，無法正常運作</div>
+      <div class="controls">
+        <div class="control-row">
+          <span class="control-label">磚牌張數</span>
+          <input type="range" id="b-k" min="1" max="20" value="6" step="1" oninput="calcBrick()">
+          <span class="control-val" id="b-k-v">6 張</span>
+        </div>
+        <div class="control-row">
+          <span class="control-label">磚手門檻</span>
+          <input type="range" id="b-thresh" min="1" max="4" value="2" step="1" oninput="calcBrick()">
+          <span class="control-val" id="b-thresh-v">≥2 張</span>
+        </div>
+        <div class="control-row">
+          <span class="control-label">牌組張數</span>
+          <input type="range" id="b-n" min="40" max="60" value="40" step="1" oninput="calcBrick()">
+          <span class="control-val" id="b-n-v">40 張</span>
+        </div>
+        <div class="control-row">
+          <span class="control-label">起手張數</span>
+          <input type="range" id="b-h" min="5" max="6" value="5" step="1" oninput="calcBrick()">
+          <span class="control-val" id="b-h-v">5 張</span>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">磚手機率</div><div class="metric-value" id="b-brick">—</div></div>
+        <div class="metric"><div class="metric-label">安全起手</div><div class="metric-value" id="b-safe">—</div></div>
+        <div class="metric"><div class="metric-label">0 張磚牌</div><div class="metric-value" id="b-zero">—</div></div>
+      </div>
+      <div class="bar-section">
+        <div class="bar-meta"><span>磚手風險</span><span id="b-bar-v">—</span></div>
+        <div class="bar-track"><div class="bar-fill" id="b-bar"></div></div>
+      </div>
+      <div class="insight" id="b-insight"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">// 磚牌張數風險對照表</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>磚牌張數</th><th>磚手機率</th><th>安全率</th><th>風險評估</th></tr></thead>
+          <tbody id="b-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 5: 比較 ===== -->
+  <div id="tab-compare" class="panel">
+    <div class="card">
+      <div class="card-title">// 40 張 vs 多張數牌組比較</div>
+      <div class="controls">
+        <div class="control-row">
+          <span class="control-label">目標牌張數</span>
+          <input type="range" id="cmp-k" min="1" max="20" value="9" step="1" oninput="calcCompare()">
+          <span class="control-val" id="cmp-k-v">9 張</span>
+        </div>
+        <div class="control-row">
+          <span class="control-label">起手張數</span>
+          <input type="range" id="cmp-h" min="5" max="6" value="5" step="1" oninput="calcCompare()">
+          <span class="control-val" id="cmp-h-v">5 張</span>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>牌組張數</th><th>≥1 張機率</th><th>≥2 張機率</th><th>0 張機率</th><th>vs 40 張</th></tr></thead>
+          <tbody id="cmp-table"></tbody>
+        </table>
+      </div>
+      <div class="insight" id="cmp-insight"></div>
+    </div>
+  </div>
+
+
+</div><!-- /container -->
+
+<script>
+// ─── Math ───────────────────────────────────────────
+function comb(n, k) {
+  if (k < 0 || k > n) return 0;
+  if (k === 0 || k === n) return 1;
+  k = Math.min(k, n - k);
+  let r = 1;
+  for (let i = 0; i < k; i++) r = r * (n - i) / (i + 1);
+  return r;
+}
+function hyper(N, K, n, x) {
+  return comb(K, x) * comb(N - K, n - x) / comb(N, n);
+}
+function pAtLeast(N, K, n, min) {
+  let s = 0;
+  for (let x = 0; x < min; x++) s += hyper(N, K, n, x);
+  return 1 - s;
+}
+function fmt(p) { return (p * 100).toFixed(1) + '%'; }
+
+// ─── Color helpers ───────────────────────────────────
+function barClr(p, threshGood, threshWarn) {
+  if (p >= threshGood) return '#3de88a';
+  if (p >= threshWarn) return '#ffaa44';
+  return '#ff4d6d';
+}
+function txtClr(p, threshGood, threshWarn) {
+  if (p >= threshGood) return 'clr-good';
+  if (p >= threshWarn) return 'clr-warn';
+  return 'clr-bad';
+}
+function setBar(id, p, color) {
+  const el = document.getElementById(id);
+  el.style.width = Math.round(p * 100) + '%';
+  el.style.background = color;
+}
+function setMetric(id, text, cls) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'metric-value ' + cls;
+}
+function dot(clr) {
+  return `<span class="dot" style="background:${clr}"></span>`;
+}
+
+// ─── Tabs ────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function switchMode(mode) {
+  const simple = document.getElementById('mode-simple');
+  const adv = document.getElementById('mode-adv');
+  const btnS = document.getElementById('mode-simple-btn');
+  const btnA = document.getElementById('mode-adv-btn');
+  const activeStyle = 'flex:1;padding:8px 12px;border-radius:4px;border:1px solid var(--border2);background:linear-gradient(135deg,rgba(123,92,255,0.25),rgba(160,132,255,0.15));color:var(--accent2);font-family:var(--sans);font-size:13px;cursor:pointer;';
+  const inactiveStyle = 'flex:1;padding:8px 12px;border-radius:4px;border:none;background:transparent;color:var(--text2);font-family:var(--sans);font-size:13px;cursor:pointer;';
+  if (mode === 'simple') {
+    simple.style.display = 'block';
+    adv.style.display = 'none';
+    btnS.style.cssText = activeStyle;
+    btnA.style.cssText = inactiveStyle;
+  } else {
+    simple.style.display = 'none';
+    adv.style.display = 'block';
+    btnS.style.cssText = inactiveStyle;
+    btnA.style.cssText = activeStyle;
+    calcOrCombo();
+  }
+}
+
+// ─── TAB 1: Starter ──────────────────────────────────
+function calcStarter() {
+  const K = +document.getElementById('s-k').value;
+  const N = +document.getElementById('s-n').value;
+  const n = +document.getElementById('s-h').value;
+  document.getElementById('s-k-v').textContent = K + ' 張';
+  document.getElementById('s-n-v').textContent = N + ' 張';
+  document.getElementById('s-h-v').textContent = n + ' 張';
+
+  const p1 = pAtLeast(N, K, n, 1);
+  const p2 = pAtLeast(N, K, n, 2);
+  const p0 = hyper(N, K, n, 0);
+
+  setMetric('s-m1', fmt(p1), txtClr(p1, 0.85, 0.70));
+  setMetric('s-m2', fmt(p2), txtClr(p2, 0.60, 0.40));
+  setMetric('s-m0', fmt(p0), p0 < 0.15 ? 'clr-good' : p0 < 0.30 ? 'clr-warn' : 'clr-bad');
+
+  const c1 = barClr(p1, 0.85, 0.70);
+  setBar('s-bar1', p1, c1);
+  document.getElementById('s-bar1-v').textContent = fmt(p1);
+  const c2 = barClr(p2, 0.60, 0.40);
+  setBar('s-bar2', p2, c2);
+  document.getElementById('s-bar2-v').textContent = fmt(p2);
+
+  // find threshold for 90%
+  let need90 = '—';
+  for (let k = 1; k <= N; k++) {
+    if (pAtLeast(N, k, n, 1) >= 0.90) { need90 = k; break; }
+  }
+  document.getElementById('s-insight').innerHTML =
+    `在 <strong>${N} 張牌組、起手 ${n} 張</strong>的條件下，<br>
+     達到 90% 啟動率需放至少 <strong>${need90} 張</strong>啟動點。<br>
+     目前設定（${K} 張）的啟動率為 <strong>${fmt(p1)}</strong>。`;
+
+  // table
+  const rows = [6,7,8,9,10,11,12,13,14,15];
+  let html = '';
+  rows.forEach(k => {
+    const r1 = pAtLeast(N, k, n, 1);
+    const r2 = pAtLeast(N, k, n, 2);
+    const r0 = hyper(N, k, n, 0);
+    const clr = barClr(r1, 0.85, 0.70);
+    const tag = r1 >= 0.90 ? '✓ 達標' : r1 >= 0.80 ? '尚可' : '偏低';
+    const hl = k === K ? ' class="hl"' : '';
+    html += `<tr${hl}><td>${dot(clr)}${k} 張${k===K?' ◀':''}</td><td>${fmt(r1)}</td><td>${fmt(r2)}</td><td>${fmt(r0)}</td><td>${tag}</td></tr>`;
+  });
+  document.getElementById('s-table').innerHTML = html;
+}
+
+// ─── TAB 2: Handtrap ─────────────────────────────────
+function calcHandtrap() {
+  const K = +document.getElementById('h-k').value;
+  const N = +document.getElementById('h-n').value;
+  const n = +document.getElementById('h-h').value;
+  document.getElementById('h-k-v').textContent = K + ' 張';
+  document.getElementById('h-n-v').textContent = N + ' 張';
+  document.getElementById('h-h-v').textContent = n + ' 張';
+
+  const p2 = pAtLeast(N, K, n, 2);
+  const p1 = pAtLeast(N, K, n, 1);
+  const p0 = hyper(N, K, n, 0);
+
+  setMetric('h-m2', fmt(p2), txtClr(p2, 0.50, 0.35));
+  setMetric('h-m1', fmt(p1), txtClr(p1, 0.80, 0.60));
+  setMetric('h-m0', fmt(p0), p0 < 0.15 ? 'clr-good' : p0 < 0.30 ? 'clr-warn' : 'clr-bad');
+
+  setBar('h-bar2', p2, barClr(p2, 0.50, 0.35));
+  document.getElementById('h-bar2-v').textContent = fmt(p2);
+  setBar('h-bar1', p1, barClr(p1, 0.80, 0.60));
+  document.getElementById('h-bar1-v').textContent = fmt(p1);
+
+  let need50 = '—';
+  for (let k = 1; k <= N; k++) {
+    if (pAtLeast(N, k, n, 2) >= 0.50) { need50 = k; break; }
+  }
+  document.getElementById('h-insight').innerHTML =
+    `「≥2 張手坑」過半需 <strong>${need50} 張</strong>手坑（${N} 張牌組 / 起手 ${n} 張）。<br>
+     後手結構性劣勢：想穩定摸到 2 張，幾乎要把手坑塞滿才勉強過半。`;
+
+  const rows = [6,7,8,9,10,11,12,13,14,15];
+  let html = '';
+  rows.forEach(k => {
+    const r2 = pAtLeast(N, k, n, 2);
+    const r1 = pAtLeast(N, k, n, 1);
+    const r0 = hyper(N, k, n, 0);
+    const clr = barClr(r2, 0.50, 0.35);
+    const tag = r2 >= 0.55 ? '優' : r2 >= 0.45 ? '✓ 過半' : r2 >= 0.30 ? '尚可' : '偏低';
+    const hl = k === K ? ' class="hl"' : '';
+    html += `<tr${hl}><td>${dot(clr)}${k} 張${k===K?' ◀':''}</td><td>${fmt(r2)}</td><td>${fmt(r1)}</td><td>${fmt(r0)}</td><td>${tag}</td></tr>`;
+  });
+  document.getElementById('h-table').innerHTML = html;
+}
+
+// ─── TAB 3: Combo ────────────────────────────────────
+function calcCombo() {
+  const Ka = +document.getElementById('c-a').value;
+  const Kb = +document.getElementById('c-b').value;
+  const N  = +document.getElementById('c-n').value;
+  const n  = +document.getElementById('c-h').value;
+  document.getElementById('c-a-v').textContent = Ka + ' 張';
+  document.getElementById('c-b-v').textContent = Kb + ' 張';
+  document.getElementById('c-n-v').textContent = N + ' 張';
+  document.getElementById('c-h-v').textContent = n + ' 張';
+
+  // P(A=0): hyper(N, Ka, n, 0)
+  // P(B=0): hyper(N, Kb, n, 0)
+  // P(A=0 AND B=0): C(N-Ka-Kb, n) / C(N, n)
+  const pA0 = hyper(N, Ka, n, 0);
+  const pB0 = hyper(N, Kb, n, 0);
+  const pAB0 = (Ka + Kb <= N) ? comb(N - Ka - Kb, n) / comb(N, n) : 0;
+  const pBoth = 1 - pA0 - pB0 + pAB0;
+  const pA1 = 1 - pA0;
+  const pB1 = 1 - pB0;
+
+  setMetric('c-both', fmt(Math.max(0, pBoth)), txtClr(pBoth, 0.50, 0.30));
+  setMetric('c-a-only', fmt(pA1), 'clr-neutral');
+  setMetric('c-b-only', fmt(pB1), 'clr-neutral');
+
+  const clr = barClr(Math.max(0, pBoth), 0.50, 0.30);
+  setBar('c-bar', Math.max(0, pBoth), clr);
+  document.getElementById('c-bar-v').textContent = fmt(Math.max(0, pBoth));
+
+  document.getElementById('c-insight').innerHTML =
+    `A（${Ka} 張）和 B（${Kb} 張）分別能摸到的機率：${fmt(pA1)} / ${fmt(pB1)}。<br>
+     但兩張<strong>同時</strong>在起手的機率只有 <strong>${fmt(Math.max(0, pBoth))}</strong>，比直覺低得多。<br>
+     這就是「需要兩張配合」的魔力：每多一個限制，機率就大幅下降。`;
+
+  // table: vary Ka and Kb symmetrically
+  const combos = [[1,3],[2,3],[3,3],[2,2],[3,2],[3,1],[2,1],[1,2],[3,3],[2,2]];
+  const seen = new Set();
+  let html = '';
+  for (let a = 1; a <= 3; a++) {
+    for (let b = 1; b <= 3; b++) {
+      const key = a + ',' + b;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const _pA0 = hyper(N, a, n, 0);
+      const _pB0 = hyper(N, b, n, 0);
+      const _pAB0 = (a + b <= N) ? comb(N - a - b, n) / comb(N, n) : 0;
+      const _pBoth = Math.max(0, 1 - _pA0 - _pB0 + _pAB0);
+      const clr = barClr(_pBoth, 0.50, 0.30);
+      const tag = _pBoth >= 0.50 ? '✓ 過半' : _pBoth >= 0.30 ? '尚可' : '偏低';
+      const hl = (a === Ka && b === Kb) ? ' class="hl"' : '';
+      html += `<tr${hl}><td>${dot(clr)}${a} 張</td><td>${b} 張</td><td>${a+b} 張</td><td>${fmt(_pBoth)}</td><td>${tag}</td></tr>`;
+    }
+  }
+  document.getElementById('c-table').innerHTML = html;
+}
+
+// ─── TAB 4: Brick ────────────────────────────────────
+function calcBrick() {
+  const K      = +document.getElementById('b-k').value;
+  const thresh = +document.getElementById('b-thresh').value;
+  const N      = +document.getElementById('b-n').value;
+  const n      = +document.getElementById('b-h').value;
+  document.getElementById('b-k-v').textContent = K + ' 張';
+  document.getElementById('b-thresh-v').textContent = '≥' + thresh + ' 張';
+  document.getElementById('b-n-v').textContent = N + ' 張';
+  document.getElementById('b-h-v').textContent = n + ' 張';
+
+  const pBrick = pAtLeast(N, K, n, thresh);
+  const pSafe = 1 - pBrick;
+  const p0 = hyper(N, K, n, 0);
+
+  // for brick, bad = high probability
+  const bClr = pBrick < 0.10 ? '#3de88a' : pBrick < 0.20 ? '#ffaa44' : '#ff4d6d';
+  setMetric('b-brick', fmt(pBrick), pBrick < 0.10 ? 'clr-good' : pBrick < 0.20 ? 'clr-warn' : 'clr-bad');
+  setMetric('b-safe',  fmt(pSafe),  pSafe > 0.90 ? 'clr-good' : pSafe > 0.80 ? 'clr-warn' : 'clr-bad');
+  setMetric('b-zero',  fmt(p0),     'clr-neutral');
+
+  setBar('b-bar', pBrick, bClr);
+  document.getElementById('b-bar-v').textContent = fmt(pBrick);
+
+  document.getElementById('b-insight').innerHTML =
+    `牌組中有 <strong>${K} 張</strong>磚牌，起手 ≥${thresh} 張磚牌（無法運作）的機率為 <strong>${fmt(pBrick)}</strong>。<br>
+     ${pBrick > 0.20 ? '⚠ 磚手風險偏高，建議減少磚牌或增加牌組搜索手段。' : '磚手風險在可接受範圍內。'}`;
+
+  const rows = [2,3,4,5,6,7,8,9,10];
+  let html = '';
+  rows.forEach(k => {
+    const pb = pAtLeast(N, k, n, thresh);
+    const ps = 1 - pb;
+    const clr = pb < 0.10 ? '#3de88a' : pb < 0.20 ? '#ffaa44' : '#ff4d6d';
+    const tag = pb < 0.10 ? '低風險' : pb < 0.20 ? '⚠ 注意' : '高風險';
+    const hl = k === K ? ' class="hl"' : '';
+    html += `<tr${hl}><td>${dot(clr)}${k} 張${k===K?' ◀':''}</td><td>${fmt(pb)}</td><td>${fmt(ps)}</td><td>${tag}</td></tr>`;
+  });
+  document.getElementById('b-table').innerHTML = html;
+}
+
+// ─── TAB 5: Compare ──────────────────────────────────
+function calcCompare() {
+  const K = +document.getElementById('cmp-k').value;
+  const n = +document.getElementById('cmp-h').value;
+  document.getElementById('cmp-k-v').textContent = K + ' 張';
+  document.getElementById('cmp-h-v').textContent = n + ' 張';
+
+  const deckSizes = [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 55, 60];
+  const base = pAtLeast(40, K, n, 1);
+  let html = '';
+  deckSizes.forEach(N => {
+    const actualK = Math.min(K, N);
+    const p1 = pAtLeast(N, actualK, n, 1);
+    const p2 = pAtLeast(N, actualK, n, 2);
+    const p0 = hyper(N, actualK, n, 0);
+    const diff = p1 - base;
+    const diffStr = N === 40 ? '基準' : (diff >= 0 ? '+' : '') + (diff * 100).toFixed(1) + '%';
+    const diffClr = N === 40 ? 'clr-neutral' : diff >= 0 ? 'clr-good' : 'clr-bad';
+    const clr = barClr(p1, 0.85, 0.70);
+    const hl = N === 40 ? ' class="hl"' : '';
+    html += `<tr${hl}><td>${dot(clr)}${N} 張</td><td>${fmt(p1)}</td><td>${fmt(p2)}</td><td>${fmt(p0)}</td><td class="${diffClr}">${diffStr}</td></tr>`;
+  });
+  document.getElementById('cmp-table').innerHTML = html;
+
+  document.getElementById('cmp-insight').innerHTML =
+    `固定放 <strong>${K} 張</strong>目標牌、起手 <strong>${n} 張</strong>：<br>
+     牌組每增加 1 張，摸到機率就略微下降。40 張是機率最高的下限。<br>
+     增加牌組張數通常是為了補強其他功能，需評估整體權衡。`;
+}
+
+// ─── TAB 6: Or-Combo ────────────────────────────────
+// ─── YGOPRODeck Autocomplete ─────────────────────────
+let orSearchTimer = null;
+let orSuggestItems = [];
+let orSuggestIdx = -1;
+let orSelectedCard = null;
+
+const LIMIT_LABEL = {0:'禁止', 1:'限一', 2:'限二', 3:'無限制'};
+const LIMIT_COLOR = {
+  0:'color:#ff4d6d;background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.3);',
+  1:'color:var(--amber);background:rgba(255,170,68,0.1);border:1px solid rgba(255,170,68,0.3);',
+  2:'color:var(--gold2);background:rgba(245,217,110,0.1);border:1px solid rgba(245,217,110,0.3);',
+  3:'color:#3de88a;background:rgba(61,232,138,0.1);border:1px solid rgba(61,232,138,0.3);'
+};
+
+function orGetFilters() {
+  const cat = document.getElementById('f-category')?.value || '';
+  const race = document.getElementById('f-race')?.value || '';
+  const attr = document.getElementById('f-attribute')?.value || '';
+  const lim = document.getElementById('f-limit')?.value || '';
+  return { cat, race, attr, lim };
+}
+
+function orResetFilters() {
+  ['f-category','f-race','f-attribute','f-limit'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  orSearchCard(document.getElementById('or-new-name').value);
+}
+
+// ── 中英文卡名對照表（繁體 / 簡體 → 英文）──────────────
+const ZH_EN = {
+  // 手坑
+  '灰流幽鬼':'Ash Blossom & Joyous Spring','增殖的G':'Maxx "C"','無限泡影':'Infinite Impermanence',
+  '原始生命態尼比魯':'Nibiru, the Primal Being','效果無效':'Effect Veiler','幻創的騎諾修伊':'Ghost Belle & Haunted Mansion',
+  '怪獸奪取':'Ghost Ogre & Snow Rabbit','墓穴的指名者':'Called by the Grave','抹殺的指名者':'Crossout Designator',
+  '泡影':'Infinite Impermanence','D.D.烏鴉':'D.D. Crow','幻貌王幽靈騎士':'Ghost Reaper & Winter Cherries',
+  // 蛇眼
+  '蛇眼艾克塞爾':'Snake-Eye Ash','原罪寶-蛇眼':'Original Sinful Spoils - Snake-Eye',
+  '蛇眼融合':'Snake-Eyes Poplar','炎之蛇眼':'Diabellstar the Black Witch',
+  '黑女巫黛亞柏爾斯塔':'Diabellstar the Black Witch','蛇眼的炎龍':'Snake-Eye Flamberge Dragon',
+  // 天盃龍
+  '天盃龍白龍':'Tenpai Dragon Paidra','天盃龍赤龍':'Tenpai Dragon Chundra','天盃龍黃龍':'Tenpai Dragon Genryu',
+  '炎洗禮':'Flame Purification',
+  // 瑪麗斯
+  '瑪麗斯海魔女':'Marincess Sea Horse','瑪麗斯珊瑚三角':'Marincess Coral Triangle',
+  // 碧眼
+  '藍眼白龍':'Blue-Eyes White Dragon','青眼白龍':'Blue-Eyes White Dragon',
+  '青眼亞白龍':'Blue-Eyes Alternative White Dragon','青眼混沌極龍':'Blue-Eyes Chaos MAX Dragon',
+  '青眼精神龍':'Blue-Eyes Spirit Dragon','加農龍':'Sage with Eyes of Blue',
+  // 黑魔術師
+  '黑魔術師':'Dark Magician','黑魔術師女孩':'Dark Magician Girl','魔法師之力':'Magician\'s Force',
+  // 燃烽
+  '燃烽的幸運貓':'Salamangreat Almiraj','燃烽牛犬':'Salamangreat Gazelle','燃烽獅子':'Salamangreat Sunlight Wolf',
+  '燃烽轉生':'Salamangreat Rage','燃烽吼聲':'Salamangreat Roar',
+  // 鬼劍士
+  '斬機':'Mathmech','劍鬥獸':'Gladiator Beast','魔救':'Mystic Mine',
+  // 通用魔法/陷阱
+  '一死換一生':'One for One','�拯救兔子':'Rescue Rabbit','黑洞':'Dark Hole',
+  '怪獸再生':'Monster Reborn','天使的施捨':'Pot of Greed','貪慾之壺':'Pot of Greed',
+  '貪吝壺':'Pot of Desires','三抽壺':'Pot of Extravagance','繁盛之壺':'Pot of Prosperity',
+  '魔法師之右手':'Right Hand of the Magic God','神之通告':'Divine Warning',
+  '魔封之芳香':'Magical Meltdown','融合':'Polymerization','始源融合':'Beginning of Heaven and Earth',
+  '超融合':'Super Polymerization','額外融合':'Extra Fusion',
+  '激流葬':'Torrential Tribute','奈落的落穴':'Bottomless Trap Hole',
+  '神之宣告':'Counter Gate','神之警告':'Solemn Warning','神之通知':'Solemn Strike',
+  '禁忌的聖壺':'Forbidden Chalice','禁忌的衣裳':'Forbidden Dress','禁忌的液滴':'Forbidden Droplet',
+  '三位一體的力量':'Summon Limit','場地淨化':'Terraforming','活路':'Harpie\'s Feather Duster',
+  // 勇士龍
+  '捕食植物奧菲斯':'Predaplant Verte Anaconda',
+  // 流行環境
+  '宣告者精靈':'Herald of Perfection','宣告者天使':'Herald of Orange Light',
+  '神碑':'Bystial','神碑的泉':'Bystial Druiswurm','魔界劇團':'Abyss Actor',
+  '轟雷帝':'Thunder King Rai-Oh',
+  // 搜索/通用
+  '增援':'Reinforcement of the Army','戰士的生還':'The Warrior Returning Alive',
+  '歸還與神壺':'Return and Heaven Pot','奪取壺':'Pot of Acquisitiveness',
+  '緊急傳送':'Emergency Teleport','死者蘇生':'Monster Reborn',
+  '月之書':'Book of Moon','心變':'Mind Control',
+  // 簡體對照（部分）
+  '灰流幽鬼':'Ash Blossom & Joyous Spring','增殖的G':'Maxx "C"',
+  '无限泡影':'Infinite Impermanence','效果无效':'Effect Veiler',
+};
+
+function isChinese(str) {
+  return /[\u4e00-\u9fff\u3400-\u4dbf]/.test(str);
+}
+
+// 中文模糊比對 → 回傳 [{zhName, enName}]
+function zhSearch(q) {
+  const hits = [];
+  const lq = q.toLowerCase();
+  for (const [zh, en] of Object.entries(ZH_EN)) {
+    if (zh.includes(q) || zh.toLowerCase().includes(lq)) {
+      hits.push({ zhName: zh, enName: en });
+    }
+  }
+  // dedupe by enName
+  const seen = new Set();
+  return hits.filter(h => { if (seen.has(h.enName)) return false; seen.add(h.enName); return true; });
+}
+
+async function fetchByNames(enNames, lim) {
+  if (!enNames.length) return [];
+  const url = `https://db.ygoprodeck.com/api/v7/cardinfo.php?name=${enNames.map(n=>encodeURIComponent(n)).join('|')}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.data || []).map(c => {
+      const banInfo = c.banlist_info;
+      let limit = 3;
+      if (banInfo?.ban_tcg === 'Banned') limit = 0;
+      else if (banInfo?.ban_tcg === 'Limited') limit = 1;
+      else if (banInfo?.ban_tcg === 'Semi-Limited') limit = 2;
+      if (lim !== '') limit = parseInt(lim);
+      return { name: c.name, zhName: null, limit, cardType: c.type, race: c.race, attribute: c.attribute };
+    });
+  } catch { return []; }
+}
+
+async function orSearchCard(q) {
+  orSelectedCard = null;
+  const badge = document.getElementById('or-limit-badge');
+  if (badge) badge.style.display = 'none';
+  document.getElementById('or-new-count').max = 3;
+
+  const filters = orGetFilters();
+  const { cat, race, attr, lim } = filters;
+  const hasFilter = cat || race || attr || lim;
+  const trimmed = q.trim();
+
+  if (trimmed.length < 1 && !hasFilter) { orHideSuggest(); return; }
+  clearTimeout(orSearchTimer);
+  document.getElementById('or-search-status').textContent = '搜尋中...';
+
+  orSearchTimer = setTimeout(async () => {
+    try {
+      let items = [];
+
+      if (trimmed && isChinese(trimmed)) {
+        // ── 中文：先查本地對照表，再用英文名打 YGOPRODECK ──
+        const matches = zhSearch(trimmed);
+        if (!matches.length) {
+          document.getElementById('or-search-status').textContent = '找不到中文卡名，試試英文搜尋';
+          orHideSuggest(); return;
+        }
+        const fetched = await fetchByNames(matches.map(m => m.enName), lim);
+        // 把中文名對應回來
+        items = fetched.map(c => {
+          const match = matches.find(m => m.enName === c.name);
+          return { ...c, zhName: match?.zhName || null };
+        });
+        // 本地套用篩選器
+        if (cat === 'monster') items = items.filter(c => c.cardType && !c.cardType.includes('Spell') && !c.cardType.includes('Trap'));
+        else if (cat === 'spell') items = items.filter(c => c.cardType?.includes('Spell'));
+        else if (cat === 'trap')  items = items.filter(c => c.cardType?.includes('Trap'));
+        if (race) items = items.filter(c => c.race === race);
+        if (attr) items = items.filter(c => c.attribute === attr);
+
+      } else {
+        // ── 英文 / 純篩選器 → 直接打 YGOPRODECK ──
+        let url = 'https://db.ygoprodeck.com/api/v7/cardinfo.php?num=12&offset=0';
+        if (trimmed) url += `&fname=${encodeURIComponent(trimmed)}`;
+        if (cat === 'monster') url += '&type=Normal%20Monster,Effect%20Monster,Fusion%20Monster,Synchro%20Monster,XYZ%20Monster,Link%20Monster,Pendulum%20Effect%20Monster,Ritual%20Monster';
+        else if (cat === 'spell') url += '&type=Spell%20Card';
+        else if (cat === 'trap')  url += '&type=Trap%20Card';
+        if (race) url += `&race=${encodeURIComponent(race)}`;
+        if (attr) url += `&attribute=${encodeURIComponent(attr)}`;
+        if (lim === '0') url += '&banlist=tcg&ban_tcg=Banned';
+        else if (lim === '1') url += '&banlist=tcg&ban_tcg=Limited';
+        else if (lim === '2') url += '&banlist=tcg&ban_tcg=Semi-Limited';
+        if (!trimmed && !cat && !race && !attr && !lim) { orHideSuggest(); return; }
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+        items = (data.data || []).map(c => {
+          const banInfo = c.banlist_info;
+          let limit = 3;
+          if (banInfo?.ban_tcg === 'Banned') limit = 0;
+          else if (banInfo?.ban_tcg === 'Limited') limit = 1;
+          else if (banInfo?.ban_tcg === 'Semi-Limited') limit = 2;
+          if (lim !== '') limit = parseInt(lim);
+          return { name: c.name, zhName: null, limit, cardType: c.type, race: c.race, attribute: c.attribute };
+        });
+      }
+
+      orSuggestItems = items;
+      document.getElementById('or-search-status').textContent =
+        items.length ? `找到 ${items.length} 張卡` : '找不到符合條件的卡片';
+      orShowSuggest();
+
+    } catch(e) {
+      document.getElementById('or-search-status').textContent = '搜尋失敗，請確認網路連線';
+      orHideSuggest();
+    }
+  }, 350);
+}
+
+
+function orShowSuggest() {
+  const box = document.getElementById('or-suggest');
+  if (!orSuggestItems.length) { box.style.display = 'none'; return; }
+  orSuggestIdx = -1;
+  box.innerHTML = orSuggestItems.map((c, i) => {
+    const lStyle = LIMIT_COLOR[c.limit] || LIMIT_COLOR[3];
+    const lLabel = LIMIT_LABEL[c.limit] ?? '無限制';
+    const displayName = c.zhName && c.zhName !== c.name ? c.zhName : c.name;
+    const subName = c.zhName && c.zhName !== c.name ? c.name : '';
+    const subInfo = [c.attribute, c.race].filter(Boolean).join(' · ');
+    return `<div data-i="${i}" onclick="orPickSuggest(${i})"
+      style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(120,100,255,0.08);"
+      onmouseover="this.style.background='rgba(123,92,255,0.1)'" onmouseout="this.style.background='transparent'">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${displayName}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:1px;">${subName ? subName + ' · ' : ''}${subInfo}</div>
+      </div>
+      <span style="font-size:10px;padding:1px 6px;border-radius:3px;margin-left:10px;white-space:nowrap;${lStyle}">${lLabel}</span>
+    </div>`;
+  }).join('');
+  box.style.display = 'block';
+}
+
+function orHideSuggest() {
+  document.getElementById('or-suggest').style.display = 'none';
+  orSuggestIdx = -1;
+}
+
+function orPickSuggest(i) {
+  const c = orSuggestItems[i];
+  if (!c) return;
+  orSelectedCard = c;
+  document.getElementById('or-new-name').value = c.name;
+  const maxCount = c.limit === 0 ? 0 : c.limit;
+  const countEl = document.getElementById('or-new-count');
+  countEl.max = maxCount || 3;
+  countEl.value = maxCount || 3;
+  const badge = document.getElementById('or-limit-badge');
+  badge.textContent = LIMIT_LABEL[c.limit] ?? '無限制';
+  badge.style.cssText = `font-size:11px;padding:2px 7px;border-radius:3px;display:inline-block;${LIMIT_COLOR[c.limit]||LIMIT_COLOR[3]}`;
+  document.getElementById('or-search-status').textContent = '';
+  orHideSuggest();
+}
+
+function orSearchKeydown(e) {
+  const box = document.getElementById('or-suggest');
+  const items = box.querySelectorAll('[data-i]');
+  if (e.key === 'ArrowDown') { e.preventDefault(); orSuggestIdx = Math.min(orSuggestIdx+1, items.length-1); orHighlight(items); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); orSuggestIdx = Math.max(orSuggestIdx-1, 0); orHighlight(items); }
+  else if (e.key === 'Enter') { e.preventDefault(); if (orSuggestIdx >= 0) orPickSuggest(orSuggestIdx); else if(orSuggestItems.length) orPickSuggest(0); else orAddCard(); }
+  else if (e.key === 'Escape') orHideSuggest();
+}
+
+function orHighlight(items) {
+  items.forEach((el, i) => el.style.background = i === orSuggestIdx ? 'rgba(123,92,255,0.2)' : 'transparent');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#or-suggest') && e.target.id !== 'or-new-name') orHideSuggest();
+});
+
+
+let orCards = [
+  {id:1, name:'蛇眼艾克塞爾', count:3, limit:3},
+  {id:2, name:'原罪寶-蛇眼', count:3, limit:3},
+  {id:3, name:'蛇眼融合', count:2, limit:2},
+];
+let orConds = [
+  {id:1, type:'solo', parts:[{cardId:1, min:1}]},
+  {id:2, type:'combo', parts:[{cardId:1, min:1},{cardId:2, min:1}]},
+  {id:3, type:'combo', parts:[{cardId:1, min:1},{cardId:3, min:1}]},
+];
+let orCardId = 10, orCondId = 10;
+
+function orComb(n,k){
+  if(k<0||k>n)return 0; if(k===0||k===n)return 1;
+  k=Math.min(k,n-k); let r=1;
+  for(let i=0;i<k;i++)r=r*(n-i)/(i+1); return r;
+}
+function orPHand(N,n,reqs){
+  if(reqs.some(r=>r.min>r.avail))return 0;
+  const totalAvail=reqs.reduce((s,r)=>s+r.avail,0);
+  const other=N-totalAvail;
+  let prob=0;
+  function rec(idx,used,chosen){
+    if(idx===reqs.length){
+      const rem=n-chosen;
+      if(rem<0||rem>other)return;
+      prob+=orComb(other,rem); return;
+    }
+    const r=reqs[idx];
+    for(let x=r.min;x<=Math.min(r.avail,n-used);x++) rec(idx+1,used+x,chosen+x);
+  }
+  rec(0,0,0);
+  return Math.min(1,prob/orComb(N,n));
+}
+function orPCond(cond,N,n){
+  const reqs=cond.parts.map(p=>{
+    const c=orCards.find(x=>x.id===p.cardId);
+    return{min:p.min, avail:c?c.count:0};
+  });
+  return orPHand(N,n,reqs);
+}
+function orCalcTotal(N,n){
+  if(!orConds.length)return{total:0,perCond:[],soloMax:0,comboMax:0};
+  const ps=orConds.map(c=>orPCond(c,N,n));
+  const m=orConds.length;
+  let total=0;
+  for(let mask=1;mask<(1<<m);mask++){
+    const sub=[];
+    for(let i=0;i<m;i++)if(mask>>i&1)sub.push(i);
+    const sign=sub.length%2===1?1:-1;
+    const merged=[];
+    sub.forEach(i=>orConds[i].parts.forEach(p=>{
+      const ex=merged.find(x=>x.cardId===p.cardId);
+      if(ex)ex.min=Math.max(ex.min,p.min); else merged.push({...p});
+    }));
+    const reqs=merged.map(p=>{const c=orCards.find(x=>x.id===p.cardId);return{min:p.min,avail:c?c.count:0};});
+    total+=sign*orPHand(N,n,reqs);
+  }
+  const soloMax=Math.max(0,...orConds.filter(c=>c.type==='solo').map((_,i)=>ps[orConds.indexOf(orConds.filter(c=>c.type==='solo')[i])]));
+  const comboMax=Math.max(0,...orConds.filter(c=>c.type==='combo').map(c=>ps[orConds.indexOf(c)]));
+  return{total:Math.min(1,Math.max(0,total)),perCond:ps,soloMax,comboMax};
+}
+
+function calcOrCombo(){
+  const N=+document.getElementById('or-N').value||40;
+  const n=+document.getElementById('or-n').value||5;
+  document.getElementById('or-N-v').textContent=N+' 張';
+  document.getElementById('or-n-v').textContent=n+' 張';
+
+  const {total,perCond,soloMax,comboMax}=orCalcTotal(N,n);
+  const fail=1-total;
+
+  const tv=document.getElementById('or-total');
+  tv.textContent=fmt(total); tv.className='metric-value '+txtClr(total,0.85,0.70);
+  const sv=document.getElementById('or-solo');
+  sv.textContent=soloMax>0?fmt(soloMax):'—'; sv.className='metric-value '+txtClr(soloMax,0.85,0.70);
+  const cv=document.getElementById('or-combo-best');
+  cv.textContent=comboMax>0?fmt(comboMax):'—'; cv.className='metric-value '+txtClr(comboMax,0.50,0.30);
+  const fv=document.getElementById('or-fail');
+  fv.textContent=fmt(fail); fv.className='metric-value '+(fail<0.10?'clr-good':fail<0.20?'clr-warn':'clr-bad');
+
+  let barsHtml='';
+  orConds.forEach((cond,i)=>{
+    const p=perCond[i]||0;
+    const pct=Math.round(p*100);
+    const clr=barClr(p, cond.type==='combo'?0.50:0.85, cond.type==='combo'?0.30:0.65);
+    const tag=cond.type==='solo'
+      ? `<span style="font-family:var(--mono);font-size:10px;color:#3de88a;background:rgba(61,232,138,0.1);border:1px solid rgba(61,232,138,0.3);border-radius:3px;padding:1px 6px;">單卡</span>`
+      : `<span style="font-family:var(--mono);font-size:10px;color:var(--accent2);background:rgba(123,92,255,0.12);border:1px solid var(--border2);border-radius:3px;padding:1px 6px;">配合</span>`;
+    const parts=cond.parts.map(pt=>{const c=orCards.find(x=>x.id===pt.cardId);return(c?c.name:'?')+'×'+pt.min;}).join(' + ');
+    barsHtml+=`<div class="bar-section">
+      <div class="bar-meta"><span>${tag} ${parts}</span><span>${fmt(p)}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${clr};"></div></div>
+    </div>`;
+  });
+  document.getElementById('or-bars').innerHTML=barsHtml;
+
+  let tips=[];
+  if(!orConds.length){tips.push('請新增啟動條件後即可計算。');}
+  else if(total>=0.90) tips.push(`整體啟動率 <strong>${fmt(total)}</strong>，非常穩定！`);
+  else if(total>=0.75) tips.push(`整體啟動率 <strong>${fmt(total)}</strong>，尚可，可考慮增加單卡啟動點。`);
+  else tips.push(`整體啟動率 <strong>${fmt(total)}</strong> 偏低，建議增加單卡啟動或增加配合牌張數。`);
+  if(fail>0.15&&orConds.length) tips.push(`完全空手機率 <strong>${fmt(fail)}</strong>，風險偏高。`);
+  document.getElementById('or-insight').innerHTML=tips.join('<br>');
+}
+
+function orRenderCards(){
+  const el=document.getElementById('or-card-list');
+  if(!orCards.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);">尚未新增卡片，請搜尋並選擇卡片加入。</div>';return;}
+  el.innerHTML=orCards.map(c=>{
+    const lim = c.limit ?? 3;
+    const lStyle = LIMIT_COLOR[lim] || LIMIT_COLOR[3];
+    const lLabel = LIMIT_LABEL[lim] ?? '無限制';
+    const maxCount = lim === 0 ? 1 : lim;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(123,92,255,0.08);">
+      <span style="flex:1;font-size:13px;color:var(--text);">${c.name}</span>
+      <span style="font-size:10px;padding:1px 6px;border-radius:3px;${lStyle}">${lLabel}</span>
+      <span style="font-size:12px;color:var(--text3);">×</span>
+      <input type="number" value="${c.count}" min="1" max="${maxCount}"
+        style="width:44px;background:var(--surface);border:1px solid var(--border);border-radius:3px;color:var(--gold2);font-family:var(--mono);font-size:12px;padding:3px 6px;text-align:center;"
+        onchange="orUpdateCard(${c.id},this.value,${maxCount})">
+      <button onclick="orRemoveCard(${c.id})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 4px;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'">×</button>
+    </div>`;
+  }).join('');
+}
+
+function orRenderConds(){
+  const el=document.getElementById('or-cond-list');
+  if(!orConds.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);">尚未設定條件</div>';return;}
+  el.innerHTML=orConds.map(cond=>{
+    const tagStyle=cond.type==='solo'
+      ? 'color:#3de88a;background:rgba(61,232,138,0.1);border:1px solid rgba(61,232,138,0.3);'
+      : 'color:var(--accent2);background:rgba(123,92,255,0.12);border:1px solid var(--border2);';
+    const tagTxt=cond.type==='solo'?'單卡啟動':'雙卡配合';
+    const partsHtml=cond.parts.map((pt,pi)=>{
+      const cardOpts=orCards.map(c=>`<option value="${c.id}"${c.id===pt.cardId?' selected':''}>${c.name}</option>`).join('');
+      return `${pi>0?'<span style="color:var(--text3);margin:0 4px;font-size:12px;">+</span>':''}
+        <span style="display:inline-flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:3px 8px;">
+          <select onchange="orUpdateCondPart(${cond.id},${pi},'cardId',+this.value)"
+            style="background:transparent;border:none;color:var(--text2);font-family:var(--sans);font-size:12px;cursor:pointer;outline:none;">${cardOpts}</select>
+          <span style="font-size:11px;color:var(--text3);">≥</span>
+          <input type="number" value="${pt.min}" min="1" max="10"
+            style="width:30px;background:transparent;border:none;color:var(--gold2);font-family:var(--mono);font-size:12px;text-align:center;outline:none;"
+            onchange="orUpdateCondPart(${cond.id},${pi},'min',+this.value)">
+          ${cond.parts.length>1?`<button onclick="orRemoveCondPart(${cond.id},${pi})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:0;">×</button>`:''}
+        </span>`;
+    }).join('');
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.75rem 1rem;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:3px;${tagStyle}">${tagTxt}</span>
+        <span style="font-size:11px;color:var(--text3);">此條件單獨可觸發展開</span>
+        <button onclick="orRemoveCond(${cond.id})" style="margin-left:auto;background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'">× 刪除</button>
+      </div>
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">${partsHtml}</div>
+      ${cond.type==='combo'?`<div style="margin-top:8px;"><button onclick="orAddCondPart(${cond.id})"
+        style="font-size:11px;padding:2px 10px;background:rgba(123,92,255,0.08);border:1px solid var(--border);border-radius:3px;color:var(--text2);cursor:pointer;">+ 加第三張牌</button></div>`:''}
+    </div>`;
+  }).join('');
+  calcOrCombo();
+}
+
+function orAddCard(){
+  const nameEl = document.getElementById('or-new-name');
+  const name = nameEl.value.trim();
+  if(!name) return;
+  const count = parseInt(document.getElementById('or-new-count').value)||3;
+  const limit = orSelectedCard ? orSelectedCard.limit : 3;
+  orCards.push({id:orCardId++, name, count, limit});
+  nameEl.value='';
+  orSelectedCard = null;
+  document.getElementById('or-limit-badge').style.display='none';
+  document.getElementById('or-new-count').max = 3;
+  document.getElementById('or-new-count').value = 3;
+  document.getElementById('or-search-status').textContent='';
+  orRenderCards(); orRenderConds();
+}
+function orRemoveCard(id){
+  orCards=orCards.filter(c=>c.id!==id);
+  orConds.forEach(c=>{c.parts=c.parts.filter(p=>p.cardId!==id);});
+  orConds=orConds.filter(c=>c.parts.length>0);
+  orRenderCards(); orRenderConds();
+}
+function orUpdateCard(id,v,maxCount){
+  const c=orCards.find(x=>x.id===id);
+  if(c)c.count=Math.min(maxCount||3, Math.max(1,parseInt(v)||1));
+  calcOrCombo();
+}
+function orAddCond(type){
+  if(!orCards.length){alert('請先新增至少一張卡片');return;}
+  if(type==='solo') orConds.push({id:orCondId++,type:'solo',parts:[{cardId:orCards[0].id,min:1}]});
+  else orConds.push({id:orCondId++,type:'combo',parts:[{cardId:orCards[0].id,min:1},{cardId:orCards[Math.min(1,orCards.length-1)].id,min:1}]});
+  orRenderConds();
+}
+function orRemoveCond(id){orConds=orConds.filter(c=>c.id!==id);orRenderConds();}
+function orAddCondPart(condId){
+  if(!orCards.length)return;
+  const c=orConds.find(x=>x.id===condId);
+  if(c)c.parts.push({cardId:orCards[0].id,min:1});
+  orRenderConds();
+}
+function orRemoveCondPart(condId,pi){
+  const c=orConds.find(x=>x.id===condId);
+  if(c&&c.parts.length>1){c.parts.splice(pi,1);}
+  orRenderConds();
+}
+function orUpdateCondPart(condId,pi,key,val){
+  const c=orConds.find(x=>x.id===condId);
+  if(c&&c.parts[pi])c.parts[pi][key]=val;
+  calcOrCombo();
+}
+
+// ─── Init ────────────────────────────────────────────
+calcStarter();
+calcHandtrap();
+calcCombo();
+calcBrick();
+calcCompare();
+orRenderCards();
+orRenderConds();
+</script>
+</body>
+</html>
