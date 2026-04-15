@@ -114,7 +114,7 @@ jobs:
                   'limit': c['limit']
               })
 
-          with open('cards.json', 'w', ensure_ascii=False, separators=(',', ':')) as f:
+          with open('cards.json', 'w', encoding='utf-8') as f:
               json.dump(merged, f, ensure_ascii=False, separators=(',', ':'))
           print(f"Done: {len(merged)} cards")
           EOF
